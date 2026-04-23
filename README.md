@@ -23,7 +23,7 @@ export async function register() {
 const pool = new Pool({ connectionString: process.env.DATABASE_URL }); // undefined ✗
 ```
 
-This plugin injects the dotenvx init bundle directly into webpack and turbopack runtime files at build time, so decryption happens before any user module is imported.
+This plugin decrypts env files at build time and inlines the resolved values directly into the webpack and turbopack runtime, so they are available before any user module is imported.
 
 ## Install
 
@@ -46,7 +46,77 @@ export default withDotenvx({
 });
 ```
 
-By default it loads `.env` from your project root.
+By default it loads `.env` from your project root. Because values are inlined at build time, no encrypted env files need to be present in the deployed serverless bundle, and you do not need `dotenvx run` in your dev or build scripts.
+
+### Full `@next/env` coverage with package overrides
+
+The plugin calls `dotenvx.config()` at build time (during `next.config.ts`
+evaluation) and inlines the resolved values into the webpack/turbopack runtime.
+This covers the common case — module-scope `process.env` reads at import time.
+
+However, Next.js also calls `loadEnvConfig` from `@next/env` during its own
+**Node.js startup**, before webpack runs. The webpack `resolve.alias` set by
+this plugin only intercepts imports inside webpack-compiled code, so those
+startup calls are not covered by the alias alone.
+
+To get full coverage at the Node.js package-resolution level, add an override
+so that `require('@next/env')` resolves to this package instead:
+
+**npm** (`package.json`):
+
+```json
+{
+  "overrides": {
+    "@next/env": "@fantasticfour/dotenvx-next"
+  }
+}
+```
+
+**pnpm** (`package.json`):
+
+```json
+{
+  "pnpm": {
+    "overrides": {
+      "@next/env": "@fantasticfour/dotenvx-next"
+    }
+  }
+}
+```
+
+**Yarn** (`package.json`):
+
+```json
+{
+  "resolutions": {
+    "@next/env": "@fantasticfour/dotenvx-next"
+  }
+}
+```
+
+With this override, `require('@next/env').loadEnvConfig` returns the wrapped
+version that calls `dotenvx.config()` first — at all call sites, including
+Next.js's own startup code.
+
+### Multiple environments
+
+The `files` option accepts any list of env files. Because the plugin resolves them at build time, you are responsible for selecting the right files for the current environment. On Vercel, `VERCEL_ENV` is set during the build:
+
+```ts
+// next.config.ts
+const vercelEnv = process.env.VERCEL_ENV;
+
+export default withDotenvx(config, {
+  files:
+    vercelEnv === 'production'
+      ? ['.env.base', '.env.production']
+      : vercelEnv === 'preview'
+        ? ['.env.base', '.env.preview']
+        : ['.env'], // local dev
+});
+```
+
+Passing an empty array (`files: []`) skips decryption entirely for that build, which is useful if you want to handle local dev with `dotenvx run` separately rather than baking values into the dev server runtime.
 
 ### Options
 
@@ -78,7 +148,9 @@ At build time, `dotenvx.config()` decrypts the specified env files and the resol
 
 **Turbopack builds:** Since turbopack bypasses webpack's plugin API, the plugin patches `fs.writeFile` to detect when compilation completes (signaled by `export-detail.json` being written), then prepends the same snippet into `[turbopack]_runtime.js`.
 
-Because env values are inlined at build time, no encrypted `.env` files need to be present in the deployed serverless bundle.
+**`@next/env` webpack alias:** The plugin sets `webpack resolve.alias['@next/env']` to a compat shim that wraps `loadEnvConfig` to run `dotenvx.config()` first. This covers any import of `@next/env` inside webpack-compiled server bundles (hot-reload handlers, preview mode helpers). It does not cover Next.js's own pre-webpack startup calls — use the [npm overrides pattern](#full-nextenv-coverage-with-package-overrides) for full coverage.
+
+**Edge runtime:** The webpack plugin detects edge runtime compilations via `compiler.options.target` and injects into `edge-runtime-webpack.js` rather than `webpack-runtime.js`. The inline snippet uses a `typeof process !== 'undefined'` guard, so it is safe in edge runtimes where `process` may be absent.
 
 ## Debugging
 

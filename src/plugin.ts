@@ -10,12 +10,14 @@
  *   via DotenvxWebpackPlugin (processAssets hook at PROCESS_ASSETS_STAGE_ADDITIONS).
  * - Turbopack builds: patch fs.writeFile to detect compilation completion and inject
  *   the same snippet into [turbopack]_runtime.js files.
- * - Also aliases @next/env → @fantasticfour/dotenvx-next/next-env so dotenvx
- *   secrets are available during Next.js config evaluation itself.
+ * - Webpack alias: aliases @next/env inside webpack-bundled code only (hot-reload,
+ *   preview mode). Does NOT cover Next.js's pre-webpack startup calls — use npm
+ *   overrides for full coverage. See README.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
 import dotenvx from '@dotenvx/dotenvx';
 import { DotenvxWebpackPlugin } from './webpack-plugin.js';
@@ -107,30 +109,28 @@ async function dotenvxNextConfigFn(
       ? prevWebpack(webpackConfig, webpackOptions)
       : webpackConfig;
 
-    // Alias @next/env to our drop-in replacement so dotenvx.config() is called
-    // during Next's own env loading phase
+    // Register the webpack plugin to inject the env snippet into runtime files
+    if (!isTurbopack) {
+      (config.plugins as unknown[]).push(new DotenvxWebpackPlugin({ env }));
+    }
+
+    // Alias @next/env → compat shim for webpack-bundled code paths (hot-reload, etc.).
+    // Does NOT cover Next.js startup calls before webpack. See README for npm overrides.
     config.resolve ??= {};
     (config.resolve as Record<string, unknown>).alias ??= {};
     const alias = (config.resolve as Record<string, unknown>).alias as Record<
       string,
       string
     >;
-
-    // Use require.resolve so this works from the dist directory
     try {
       alias['@next/env'] = require.resolve(
         '@fantasticfour/dotenvx-next/next-env'
       );
     } catch {
-      // If the package isn't installed under that name (e.g. local dev), skip alias
-      debugLog(
-        'Could not resolve @fantasticfour/dotenvx-next/next-env for alias — skipping'
+      // Local dev: package not installed under that name — resolve relative to this file
+      alias['@next/env'] = fileURLToPath(
+        new URL('./next-env-compat.js', import.meta.url)
       );
-    }
-
-    // Register the webpack plugin to inject the env snippet into runtime files
-    if (!isTurbopack) {
-      (config.plugins as unknown[]).push(new DotenvxWebpackPlugin({ env }));
     }
 
     return config;
