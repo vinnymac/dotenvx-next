@@ -22,7 +22,6 @@ export default defineConfig([
     entry: {
       index: 'src/index.ts',
       plugin: 'src/plugin.ts',
-      init: 'src/init.ts',
       'webpack-plugin': 'src/webpack-plugin.ts',
       'turbopack-inject': 'src/turbopack-inject.ts',
     },

@@ -8,7 +8,8 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const nextEnv = require('@next/env') as typeof import('@next/env');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const dotenvx = require('@dotenvx/dotenvx') as typeof import('@dotenvx/dotenvx');
+const dotenvx =
+  require('@dotenvx/dotenvx') as typeof import('@dotenvx/dotenvx');
 
 const { loadEnvConfig: originalLoadEnvConfig, ...rest } = nextEnv;
 
@@ -30,9 +31,9 @@ function resolveEnvFiles(envDir: string): string[] {
   let candidates: string[] = [];
 
   if (vercelEnv === 'production' || nodeEnv === 'production') {
-    candidates = ['.env.base', '.env.production'];
+    candidates = ['.env', '.env.production'];
   } else if (vercelEnv === 'preview') {
-    candidates = ['.env.base', '.env.preview'];
+    candidates = ['.env', '.env.preview'];
   } else {
     // Local dev — dotenvx run handles env loading via package.json scripts
     return [];
@@ -47,9 +48,12 @@ function resolveEnvFiles(envDir: string): string[] {
 function loadEnvConfig(
   dir: string,
   dev?: boolean,
-  log?: { info: (...args: unknown[]) => void; error: (...args: unknown[]) => void },
+  log?: {
+    info: (...args: unknown[]) => void;
+    error: (...args: unknown[]) => void;
+  },
   forceReload?: boolean,
-  onReload?: (envFilePath: string) => void,
+  onReload?: (envFilePath: string) => void
 ): ReturnType<typeof import('@next/env').loadEnvConfig> {
   const result = originalLoadEnvConfig(dir, dev, log, forceReload, onReload);
 

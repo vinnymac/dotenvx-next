@@ -1,6 +1,6 @@
 /**
  * Turbopack runtime injection — patches fs.writeFile/fs.writeFileSync to intercept
- * turbopack's build output and prepend the dotenvx init bundle into runtime files.
+ * turbopack's build output and prepend the env inline snippet into runtime files.
  *
  * Turbopack writes `[turbopack]_runtime.js` directly (bypassing webpack), so we
  * can't use the processAssets hook. Instead we intercept fs writes and inject when
@@ -22,12 +22,12 @@ export function isInjectedTurbopackRuntime(): boolean {
 }
 
 /**
- * Inject the dotenvx init bundle into turbopack runtime files.
+ * Inject the env inline snippet into turbopack runtime files.
  * Called after export-detail.json is written (turbopack compilation complete).
  */
 export function injectDotenvxInitIntoTurbopackRuntime(
   nextDirPath: string,
-  initSource: string
+  env: Record<string, string>
 ): void {
   if (injectedTurbopackRuntime) return;
 
@@ -66,22 +66,11 @@ export function injectDotenvxInitIntoTurbopackRuntime(
   // Mark as done so we don't retry
   injectedTurbopackRuntime = true;
 
-  // Strip sourcemap comment — if it appears on the last line before the closing
-  // `})({},{exports:{}});`, it would comment out the IIFE closer and cause
-  // "Unexpected end of input" at parse time.
-  const strippedSource = initSource.replace(
-    /\s*\/\/# sourceMappingURL=\S+\s*$/m,
-    ''
-  );
-
-  // Wrap in IIFE to avoid symbol collisions (CJS bundle uses exports.X = ...)
-  const iifeWrap = (src: string): string =>
-    `(function(exports,module){${src}\n})({},{exports:{}});`;
-
-  const wrappedInit = iifeWrap(strippedSource);
+  // Inline snippet: assign build-time-resolved values into process.env at runtime.
+  const inlineSnippet = `(function(){if(typeof process!=='undefined'){Object.assign(process.env,${JSON.stringify(env)});}})();`;
 
   /**
-   * Insert wrappedInit into source respecting ESM constraints.
+   * Insert inlineSnippet into source respecting ESM constraints.
    * ESM files require all top-level `import` declarations to appear before any
    * other statements, so we must insert after the last import line rather than
    * prepending to the file.
@@ -97,27 +86,23 @@ export function injectDotenvxInitIntoTurbopackRuntime(
     }
     if (lastImportIdx >= 0) {
       // Insert after the last import line
-      lines.splice(lastImportIdx + 1, 0, wrappedInit);
+      lines.splice(lastImportIdx + 1, 0, inlineSnippet);
       return lines.join('\n');
     }
-    // CJS or no imports — prepend as before
-    return [wrappedInit, origSource].join('\n');
+    // CJS or no imports — prepend
+    return [inlineSnippet, origSource].join('\n');
   };
 
   for (const runtimeFile of serverRuntimeFiles) {
     const origSource = fs.readFileSync(runtimeFile, 'utf8');
     fs.writeFileSync(runtimeFile, insertIntoSource(origSource));
-    debugLog(
-      `injected dotenvx init into turbopack server runtime: ${runtimeFile}`
-    );
+    debugLog(`injected env into turbopack server runtime: ${runtimeFile}`);
   }
 
   for (const wrapperFile of edgeWrapperFiles) {
     const origSource = fs.readFileSync(wrapperFile, 'utf8');
     fs.writeFileSync(wrapperFile, insertIntoSource(origSource));
-    debugLog(
-      `injected dotenvx init into turbopack edge wrapper: ${wrapperFile}`
-    );
+    debugLog(`injected env into turbopack edge wrapper: ${wrapperFile}`);
   }
 }
 
@@ -125,7 +110,7 @@ export function injectDotenvxInitIntoTurbopackRuntime(
  * Patch global fs methods to detect when turbopack compilation completes,
  * then trigger runtime injection.
  */
-export function activateTurbopackInjection(initSource: string): void {
+export function activateTurbopackInjection(env: Record<string, string>): void {
   debugLog('activating turbopack fs intercept');
 
   const origWriteFileFn = fs.promises.writeFile;
@@ -140,7 +125,7 @@ export function activateTurbopackInjection(initSource: string): void {
       filePath.endsWith('/.next/export-detail.json')
     ) {
       const nextDirPath = filePath.substring(0, filePath.lastIndexOf('/'));
-      injectDotenvxInitIntoTurbopackRuntime(nextDirPath, initSource);
+      injectDotenvxInitIntoTurbopackRuntime(nextDirPath, env);
     }
 
     return origWriteFileFn.apply(fs.promises, args);
@@ -158,7 +143,7 @@ export function activateTurbopackInjection(initSource: string): void {
       filePath.endsWith('/.next/export-detail.json')
     ) {
       const nextDirPath = filePath.substring(0, filePath.lastIndexOf('/'));
-      injectDotenvxInitIntoTurbopackRuntime(nextDirPath, initSource);
+      injectDotenvxInitIntoTurbopackRuntime(nextDirPath, env);
     }
 
     origWriteFileSyncFn.apply(fs, args);
