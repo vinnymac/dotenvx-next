@@ -9,8 +9,9 @@
  */
 
 // Augment global type to include our guard flag
+// export {} makes this a module so `declare global` is valid
+export {};
 declare global {
-  // eslint-disable-next-line no-var
   var __dotenvxNextInit: boolean | undefined;
 }
 

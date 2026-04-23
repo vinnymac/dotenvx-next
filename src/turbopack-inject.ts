@@ -27,7 +27,7 @@ export function isInjectedTurbopackRuntime(): boolean {
  */
 export function injectDotenvxInitIntoTurbopackRuntime(
   nextDirPath: string,
-  initSource: string,
+  initSource: string
 ): void {
   if (injectedTurbopackRuntime) return;
 
@@ -41,7 +41,10 @@ export function injectDotenvxInitIntoTurbopackRuntime(
         walkDir(path.join(dir, entry.name));
       } else if (entry.name === '[turbopack]_runtime.js') {
         serverRuntimeFiles.push(path.join(dir, entry.name));
-      } else if (entry.name.includes('edge-wrapper') && entry.name.endsWith('.js')) {
+      } else if (
+        entry.name.includes('edge-wrapper') &&
+        entry.name.endsWith('.js')
+      ) {
         edgeWrapperFiles.push(path.join(dir, entry.name));
       }
     }
@@ -51,7 +54,7 @@ export function injectDotenvxInitIntoTurbopackRuntime(
 
   debugLog(
     `turbopack runtime injection: found ${serverRuntimeFiles.length} server runtime files,`,
-    `${edgeWrapperFiles.length} edge wrapper files`,
+    `${edgeWrapperFiles.length} edge wrapper files`
   );
 
   if (!serverRuntimeFiles.length) {
@@ -66,7 +69,10 @@ export function injectDotenvxInitIntoTurbopackRuntime(
   // Strip sourcemap comment — if it appears on the last line before the closing
   // `})({},{exports:{}});`, it would comment out the IIFE closer and cause
   // "Unexpected end of input" at parse time.
-  const strippedSource = initSource.replace(/\s*\/\/# sourceMappingURL=\S+\s*$/m, '');
+  const strippedSource = initSource.replace(
+    /\s*\/\/# sourceMappingURL=\S+\s*$/m,
+    ''
+  );
 
   // Wrap in IIFE to avoid symbol collisions (CJS bundle uses exports.X = ...)
   const iifeWrap = (src: string): string =>
@@ -85,7 +91,7 @@ export function injectDotenvxInitIntoTurbopackRuntime(
     // Find the last line that starts with 'import ' (top-level import declaration)
     let lastImportIdx = -1;
     for (let i = 0; i < lines.length; i++) {
-      if (/^import\s/.test(lines[i]!)) {
+      if (/^import\s/.test(lines[i])) {
         lastImportIdx = i;
       }
     }
@@ -101,13 +107,17 @@ export function injectDotenvxInitIntoTurbopackRuntime(
   for (const runtimeFile of serverRuntimeFiles) {
     const origSource = fs.readFileSync(runtimeFile, 'utf8');
     fs.writeFileSync(runtimeFile, insertIntoSource(origSource));
-    debugLog(`injected dotenvx init into turbopack server runtime: ${runtimeFile}`);
+    debugLog(
+      `injected dotenvx init into turbopack server runtime: ${runtimeFile}`
+    );
   }
 
   for (const wrapperFile of edgeWrapperFiles) {
     const origSource = fs.readFileSync(wrapperFile, 'utf8');
     fs.writeFileSync(wrapperFile, insertIntoSource(origSource));
-    debugLog(`injected dotenvx init into turbopack edge wrapper: ${wrapperFile}`);
+    debugLog(
+      `injected dotenvx init into turbopack edge wrapper: ${wrapperFile}`
+    );
   }
 }
 
@@ -125,7 +135,10 @@ export function activateTurbopackInjection(initSource: string): void {
     const filePath = args[0].toString();
     debugLog('fs.promises.writeFile:', filePath);
 
-    if (!injectedTurbopackRuntime && filePath.endsWith('/.next/export-detail.json')) {
+    if (
+      !injectedTurbopackRuntime &&
+      filePath.endsWith('/.next/export-detail.json')
+    ) {
       const nextDirPath = filePath.substring(0, filePath.lastIndexOf('/'));
       injectDotenvxInitIntoTurbopackRuntime(nextDirPath, initSource);
     }
@@ -140,7 +153,10 @@ export function activateTurbopackInjection(initSource: string): void {
     const filePath = args[0].toString();
     debugLog('fs.writeFileSync:', filePath);
 
-    if (!injectedTurbopackRuntime && filePath.endsWith('/.next/export-detail.json')) {
+    if (
+      !injectedTurbopackRuntime &&
+      filePath.endsWith('/.next/export-detail.json')
+    ) {
       const nextDirPath = filePath.substring(0, filePath.lastIndexOf('/'));
       injectDotenvxInitIntoTurbopackRuntime(nextDirPath, initSource);
     }

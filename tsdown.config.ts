@@ -7,7 +7,7 @@ export default defineConfig([
   // "Cannot find module" errors.
   {
     entry: { 'next-env-compat': 'src/next-env-compat.ts' },
-    noExternal: ['@dotenvx/dotenvx'],
+    deps: { alwaysBundle: ['@dotenvx/dotenvx'], onlyBundle: false },
     format: ['cjs'],
     dts: true,
     sourcemap: true,
@@ -33,6 +33,6 @@ export default defineConfig([
     clean: false, // first config already cleaned
     outDir: 'dist',
     splitting: false,
-    external: ['@dotenvx/dotenvx', 'next', 'webpack'],
+    deps: { neverBundle: ['@dotenvx/dotenvx', 'next', 'webpack'] },
   },
 ]);
