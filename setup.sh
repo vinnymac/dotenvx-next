@@ -126,8 +126,15 @@ pause "Review the file list above. Press Enter to publish (you may be prompted f
 info "Publishing @fantasticfour/dotenvx-next to npm…"
 # --no-provenance: .npmrc sets provenance=true but that requires OIDC (CI only).
 # All future releases go through CI and will get provenance automatically.
-npm publish --access public --no-provenance
-success "Published to npm!"
+if npm publish --access public --no-provenance 2>&1 | tee /tmp/npm-publish.log; then
+  success "Published to npm!"
+elif grep -q "previously published versions" /tmp/npm-publish.log; then
+  warn "This version is already published — continuing."
+else
+  cat /tmp/npm-publish.log >&2
+  error "Publish failed. See above."
+  exit 1
+fi
 
 # ─── Step 4: npm automation token → GitHub secret ────────────────────────────
 step 4 "Generate npm automation token and add to GitHub"
