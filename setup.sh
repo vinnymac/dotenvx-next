@@ -124,7 +124,9 @@ echo
 pause "Review the file list above. Press Enter to publish (you may be prompted for 2FA)…"
 
 info "Publishing @fantasticfour/dotenvx-next to npm…"
-npm publish --access public
+# --no-provenance: .npmrc sets provenance=true but that requires OIDC (CI only).
+# All future releases go through CI and will get provenance automatically.
+npm publish --access public --no-provenance
 success "Published to npm!"
 
 # ─── Step 4: npm automation token → GitHub secret ────────────────────────────
