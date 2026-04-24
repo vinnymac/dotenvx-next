@@ -1,5 +1,24 @@
 # @fantasticfour/dotenvx-next
 
+## 0.2.3
+
+### Patch Changes
+
+- fd62343: Move `@dotenvx/dotenvx` from `dependencies` to `peerDependencies`.
+
+  This package is a build-time bridge between dotenvx and Next.js — any consumer already has `@dotenvx/dotenvx` installed. Listing it as a direct dependency caused npm/pnpm to install a redundant second copy (82.1 kB install / 5.2 MB unpacked) and risked silent version mismatches between the plugin and the user's own dotenvx config.
+
+  With this change, the package resolves dotenvx from the consumer's own install, matching the version they control. No behaviour changes.
+
+  **Migration:** ensure `@dotenvx/dotenvx` is listed in your project's `dependencies` or `devDependencies` (it almost certainly already is).
+
+- fd62343: Upgrade TypeScript to v6.0 and modernize dev tooling.
+
+  - **TypeScript 6.0** — upgraded from 5.9. No public API changes; generated types are identical.
+  - **pnpm 10.33.2** — updated package manager and lockfile.
+  - **Native Git hooks** — replaced `husky` + `lint-staged` (29 packages) with a committed `.githooks/pre-commit` script driven by Git 2.54 config-based hooks. Biome formatting on staged files is preserved; `pnpm install` still wires up the hook automatically via `prepare`.
+  - **pnpm security hardening** — `minimumReleaseAge`, `blockExoticSubdeps`, `trustPolicy`, and `strictDepBuilds` moved to `pnpm-workspace.yaml`.
+
 ## 0.2.2
 
 ### Patch Changes
