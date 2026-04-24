@@ -5,6 +5,7 @@
   <a href="/LICENSE"><img src="https://img.shields.io/npm/l/@fantasticfour/dotenvx-next.svg" alt="license"></a>
   <a href="https://nodejs.org/en/about/previous-releases"><img src="https://img.shields.io/node/v/@fantasticfour/dotenvx-next.svg" alt="node compatibility"></a>
   <a href="https://github.com/vinnymac/dotenvx-next/actions/workflows/tests.yml"><img src="https://img.shields.io/github/actions/workflow/status/vinnymac/dotenvx-next/tests.yml?style=flat&logo=github&label=CI" alt="CI status"></a>
+  <a href="https://socket.dev/npm/package/@fantasticfour/dotenvx-next" target="_blank" rel="noopener noreferrer"><img src="https://badge.socket.dev/npm/package/@fantasticfour/dotenvx-next" alt="socket.dev score"></a>
 </p>
 <br/>
 

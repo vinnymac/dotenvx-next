@@ -63,5 +63,21 @@
     "node": "24.15.0",
     "pnpm": "10.33.2"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "author": "Vincent Taverna <vinnymac@gmail.com> (https://github.com/vinnymac)",
+  "homepage": "https://github.com/vinnymac/dotenvx-next#readme",
+  "bugs": {
+    "url": "https://github.com/vinnymac/dotenvx-next/issues"
+  },
+  "keywords": [
+    "dotenvx",
+    "next.js",
+    "nextjs",
+    "env",
+    "secrets",
+    "encryption",
+    "webpack",
+    "turbopack",
+    "plugin"
+  ]
 }
