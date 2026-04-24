@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+TMPFILE=$(mktemp)
+trap 'rm -f "$TMPFILE"' EXIT
+git diff --cached --name-only --diff-filter=ACMR -z > "$TMPFILE"
+[ ! -s "$TMPFILE" ] && exit 0
+xargs -0 pnpm exec biome format --write --no-errors-on-unmatched < "$TMPFILE"
+xargs -0 git add < "$TMPFILE"
