@@ -1,6 +1,6 @@
 {
   "name": "@fantasticfour/dotenvx-next",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "type": "module",
   "description": "Next.js plugin that loads dotenvx secrets early — before any user code evaluates — by injecting an init bundle into webpack/turbopack runtime files at build time.",
   "repository": {
