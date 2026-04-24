@@ -1,6 +1,17 @@
 # @fantasticfour/dotenvx-next
 
-A Next.js plugin that loads [dotenvx](https://dotenvx.com) secrets before any user code evaluates at runtime. It solves the timing problem where encrypted env vars need to be decrypted before modules like Prisma initialize their connection pools.
+<p align="center">
+  <a href="https://npmx.dev/package/@fantasticfour/dotenvx-next" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/npm/v/@fantasticfour/dotenvx-next.svg" alt="npm package"></a>
+  <a href="/LICENSE"><img src="https://img.shields.io/npm/l/@fantasticfour/dotenvx-next.svg" alt="license"></a>
+  <a href="https://nodejs.org/en/about/previous-releases"><img src="https://img.shields.io/node/v/@fantasticfour/dotenvx-next.svg" alt="node compatibility"></a>
+  <a href="https://github.com/vinnymac/dotenvx-next/actions/workflows/tests.yml"><img src="https://img.shields.io/github/actions/workflow/status/vinnymac/dotenvx-next/tests.yml?style=flat&logo=github&label=CI" alt="CI status"></a>
+</p>
+<br/>
+
+## dotenvx-next
+> Decrypt [dotenvx](https://dotenvx.com) secrets before any Next.js module initializes.
+
+A Next.js plugin that loads dotenvx secrets before any user code evaluates at runtime. It solves the timing problem where encrypted env vars need to be decrypted before modules like Prisma initialize their connection pools.
 
 ## The problem
 
