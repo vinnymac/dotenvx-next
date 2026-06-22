@@ -104,7 +104,6 @@ async function dotenvxNextConfigFn(
 
   resolvedNextConfig.webpack = (webpackConfig, webpackOptions) => {
     // Apply user's existing webpack customizations first
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     const config = prevWebpack
       ? prevWebpack(webpackConfig, webpackOptions)
       : webpackConfig;
