@@ -47,7 +47,6 @@ export class DotenvxWebpackPlugin {
     const inlineSnippet = `(function(){if(typeof process!=='undefined'){Object.assign(process.env,${JSON.stringify(env)});}})();`;
 
     // Use webpack from the compiler's context — same instance Next.js uses
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const webpack = require('webpack') as typeof import('webpack');
 
     compiler.hooks.thisCompilation.tap(
@@ -59,18 +58,15 @@ export class DotenvxWebpackPlugin {
             stage: webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONS,
           },
           () => {
-            // Determine compilation target from compiler options
-            const target = compiler.options.target;
-            const isEdge = Array.isArray(target)
-              ? target.some(
-                  (t) => typeof t === 'string' && t.includes('webworker')
-                )
-              : typeof target === 'string' && target.includes('webworker');
-
-            // Only inject into server-side compilations (not client bundles)
-            const runtimeNames = isEdge
-              ? EDGE_RUNTIME_ASSETS
-              : SERVER_RUNTIME_ASSETS;
+            // Inject into whichever runtime asset this compilation emits
+            // (server or edge). compiler.options.target can't tell them apart
+            // — the edge compilation isn't tagged "webworker" — so we try every
+            // known runtime asset and let the getAsset guard below skip those
+            // (e.g. client) that this compilation didn't emit.
+            const runtimeNames = new Set([
+              ...SERVER_RUNTIME_ASSETS,
+              ...EDGE_RUNTIME_ASSETS,
+            ]);
 
             for (const assetName of runtimeNames) {
               if (!compilation.getAsset(assetName)) continue;

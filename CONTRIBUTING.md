@@ -6,6 +6,16 @@
 pnpm install
 ```
 
+### Optional: pre-commit formatting hook
+
+This repo ships a Git 2.54 config-based hook that runs `biome format` on staged
+files. It's opt-in so installs never modify your Git config automatically.
+Enable it locally with:
+
+```sh
+git config --local include.path ../.gitconfig
+```
+
 ## Development
 
 ```sh
