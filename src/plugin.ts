@@ -34,6 +34,12 @@ export interface DotenvxNextOptions {
    * Directory where env files live. Defaults to process.cwd().
    */
   envDir?: string;
+
+  /**
+   * Whether to overload (overwrite) existing process.env values with the loaded
+   * env files. Defaults to true.
+   */
+  overload?: boolean;
 }
 
 const DEFAULT_ENV_FILES = ['.env'];
@@ -88,7 +94,11 @@ async function dotenvxNextConfigFn(
   // Decrypt and resolve env values at build time.
   // parsed contains only the keys from the specified files (not all of process.env).
   const { parsed: env = {} } = resolvedFiles.length
-    ? dotenvx.config({ path: resolvedFiles, overload: true, quiet: true })
+    ? dotenvx.config({
+        path: resolvedFiles,
+        overload: options.overload ?? true,
+        quiet: true,
+      })
     : { parsed: {} };
 
   debugLog(
