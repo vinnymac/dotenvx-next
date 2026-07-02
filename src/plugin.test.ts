@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import dotenvx from '@dotenvx/dotenvx';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { activateTurbopackInjection } from './turbopack-inject.js';
 import { DotenvxWebpackPlugin } from './webpack-plugin.js';
@@ -6,6 +7,14 @@ import { DotenvxWebpackPlugin } from './webpack-plugin.js';
 vi.mock('@dotenvx/dotenvx', () => ({
   default: { config: vi.fn(() => ({ parsed: {} })) },
 }));
+
+// Pretend every resolved env file exists so the dotenvx.config() branch runs.
+vi.mock('node:fs', () => ({
+  default: { existsSync: () => true },
+  existsSync: () => true,
+}));
+
+const configMock = vi.mocked(dotenvx.config);
 
 vi.mock('./turbopack-inject.js', () => ({
   activateTurbopackInjection: vi.fn(),
@@ -29,6 +38,7 @@ describe('withDotenvx (webpack wiring)', () => {
   const saved: Record<string, string | undefined> = {};
 
   beforeEach(() => {
+    configMock.mockClear();
     for (const key of TURBOPACK_ENV) {
       saved[key] = process.env[key];
       delete process.env[key];
@@ -87,6 +97,31 @@ describe('withDotenvx (webpack wiring)', () => {
       {}
     );
     expect(out.plugins).toHaveLength(0);
+  });
+
+  it('overloads process.env by default', async () => {
+    const { withDotenvx } = await import('./plugin.js');
+
+    await withDotenvx({}, { files: ['.env'] })('phase-production-build', {
+      defaultConfig: {},
+    });
+
+    expect(configMock).toHaveBeenCalledWith(
+      expect.objectContaining({ overload: true })
+    );
+  });
+
+  it('forwards overload:false so a set NODE_ENV wins over the file', async () => {
+    const { withDotenvx } = await import('./plugin.js');
+
+    await withDotenvx({}, { files: ['.env'], overload: false })(
+      'phase-production-build',
+      { defaultConfig: {} }
+    );
+
+    expect(configMock).toHaveBeenCalledWith(
+      expect.objectContaining({ overload: false })
+    );
   });
 
   it('supports a function-style next config', async () => {
